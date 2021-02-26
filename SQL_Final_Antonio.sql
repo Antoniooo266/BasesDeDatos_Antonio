@@ -276,8 +276,8 @@ ORDER BY titulo;
 9. Obtener el código y el nombre de actor o actores más viejos.
 
     SELECT cod_act, nombre
-    FROM PELICULA
-    WHERE cod_act IN(
+    FROM ACTOR
+    WHERE cod_act IN (
         SELECT MIN(fecha_nac)
         FROM ACTOR
     );
@@ -379,6 +379,33 @@ ORDER BY L.titulo;
     SELECT cod_act, nombre
     FROM ACTOR
 
+Consultas unificanmente adsads
+
+3.
+
+    SELECT a.cod_act, a.nombre
+    FROM ACTOR A
+    WHERE EXISTS (
+        SELECT *
+        FROM PELICULA
+        WHERE director = 'Guy Ritchie'
+        AND cod_peli IN(
+            SELECT cod_peli
+            FROM ACTUA X2
+            WHERE A.cod_act = X2.cod_act
+        )
+    )AND NOT EXISTS (
+        SELECT *
+        FROM PELICULA P
+        WHERE P.director = 'Guy Ritchie'
+        AND P.cod_peli NOT IN (
+            SELECT cod_peli
+            FROM ACTUA X3
+            WHERE A.cod_act = X3.cod_act
+            )
+    );
+
+
 Consultas agrupadas
 
 1. Obtener el código y el título del libro o libros en que se ha basado más de una película, indicando cuántaspelículas se han hecho sobre él.
@@ -456,25 +483,55 @@ Consultas con concatencion
 1. Obtener  para  todos  los  países  que  hay  en  la  base  de  datos,  el  código,  el  nombre  y  la cantidad de actoresque hay de ese país.
 
     SELECT cod_pais, nombre, COUNT (cod_act)
-    FROM PAIS INNER JOIN ACTOR
+    FROM PAIS LEFT JOIN ACTOR
     ON PAIS.cod_pais = ACTOR.cod_pais
 
 2. Obtener el código y el título de todos los libros de la base de datos de año posterior a 1980 junto con lacantidad de películas a que han dado lugar.
 
-    SELECT cod
+    SELECT cod_lib, titulo, COUNT (cod_peli)
+    FROM LIBRO L LEFT JOIN PELICULA P
+    ON L.cod_lib = P.cod_lib
+    WHERE anyo > 1980
 
+3. Obtener  para  todos  los  países  que  hay  en  la  base  de  datos,  el  código,  el  nombre  y  la cantidad de actoresque hay de ese país que hayan tenido un papel como “Secundario” en alguna película.
 
-    Conjuntistas
+    SELECT cod_pais, nombre, COUNT (cod_act)
+    FROM PAIS P LEFT JOIN ACTOR A
+    ON P.cod_pais = A.cod_pais
+    WHERE cod_act IN(
+        SELECT cod_act
+        FROM ACTUA
+        WHERE papel = 'Secundario'
+    );
+
+4. Obtener para cada película que hay en la base de datos que dure más de 140 minutos, el código, el título,la cantidad de  géneros en los que está clasificado y la cantidad de actores que han actuado en ella.
+
+    SELECT cod_peli, titulo, COUNT (cod_gen), COUNT (cod_act)
+    FROM PELICULA P (LEFT JOIN CLASIFICACION C ON P.cod_peli = C.cod_peli)
+    LEFT JOIN ACTUA A ON P.cod_peli = A.cod_peli
+    WHERE duracion > 140
+    GROUP BY cod_peli, titulo
+
+Conjuntistas
+
+1. Obtener los años, ordenados ascendentemente, que aparecen en la base de datos como año en el quese editó un libro o se filmó una película. Sólo interesan años en los que no aparezca el dígito 9.
+
 
 UNION
 
-Base
-de
-Datos
-Musica
+Base de Datos Musica
 
-Consultas
-generales
+Consultas agrupadas
+
+1.
+
+    SELECT G.nombre, SUM(C.num)
+    FROM GRUPO G, CLUB C
+    WHERE G.cod_gru = c.cod_gru
+    AND G.pais = 'España'
+    GROUP BY G.cod_nombre
+
+Consultas generales
 
 6.
 
@@ -485,5 +542,27 @@ WHERE 9 = (
     FROM CLUB C2
     WHERE C2.num > C1.num
 );
+
+Base de Datos Ciclismo
+
+Consultas Generales
+
+3.
+
+EXISTS Y NOT IN
+
+5.
+
+    SELECT dorsal, nombre
+    FROM CICLISTA
+    WHERE dorsal NOT IN(
+        SELECT dorsal
+        FROM LLEVAR
+        WHERE codigo IN(
+            SELECT codigo
+            FROM LLEVAR
+            WHERE dorsal = 20
+            )
+        );
 
 
