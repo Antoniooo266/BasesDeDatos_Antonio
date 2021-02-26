@@ -420,14 +420,17 @@ WHERE P.cod_pais = A.cod_pais
   AND C.cod_peli = E.cod_peli
   AND E.anyo BETWEEN 1950 AND 1959
 GROUP BY cod_pais
-HAVING COUNT(DISTINCT cod_act) > 0 7. Obtener el código, el nombre del género en el que hay clasificadas más películas (puede haber más deuno).
+HAVING COUNT(DISTINCT cod_act) > 0
+
+7. Obtener el código, el nombre del género en el que hay clasificadas más películas (puede haber más deuno).
 
 SELECT cod_gen, nombre
 FROM GENERO G, CLASIFICACION C
 WHERE G.cod_gen = C.cod_gen
 GROUP BY cod_gen
 HAVING MAX (cod_peli)
-    8.
+
+8.
 
     Conjuntistas
 
