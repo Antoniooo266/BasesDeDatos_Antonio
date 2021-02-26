@@ -379,11 +379,49 @@ ORDER BY L.titulo;
     SELECT cod_act, nombre
     FROM ACTOR
 
-Consultas unificanmente adsads
+Consultas universalmente cuantificadas
 
-3.
+1. Obtener el código y el nombre de los países con actores y tales que todos los actores de ese país hannacido en el siglo XX (ordenados por nombre).
 
-    SELECT a.cod_act, a.nombre
+    SELECT cod_pais, nombre
+    FROM PAIS
+    WHERE NOT EXISTS (
+        SELECT *
+        FROM ACTOR
+        WHERE fecha_nac < 1/1/1900 or fecha_nac > 1/1/2000
+        AND PAIS.cod_pais = ACTOR.cod_pais
+    )AND EXISTS (
+        SELECT *
+        FROM ACTOR
+        WHERE PAIS.cod_pais = ACTOR.cod_pais
+    )
+    ORDER BY nombre;
+
+2. Obtener el código y el nombre de los actores tales que todos los papeles que han tenido son  de‘Secundario’. Sólo interesan aquellos actores que hayan actuado en alguna película.
+
+    SELECT cod_act, nombre
+    FROM ACTOR
+    WHERE EXISTS (
+        SELECT *
+        FROM ACTUA
+        WHERE papel = 'Secundario'
+        AND cod_peli IN(
+            SELECT cod_peli
+            FROM PELICULA
+        )
+    )AND NOT EXISTS (
+        SELECT *
+        FROM ACTUA
+        WHERE papel = 'Secundario'
+        AND cod_peli NOT IN(
+            SELECT cod_peli
+            FROM PELICULA
+        )
+    );
+
+3. Obtener el código y el nombre de los actores que han aparecido en todas las películas del director 'Guy Ritchie' (sólo si ha dirigido al menos una).
+
+   SELECT a.cod_act, a.nombre
     FROM ACTOR A
     WHERE EXISTS (
         SELECT *
@@ -405,6 +443,117 @@ Consultas unificanmente adsads
             )
     );
 
+4. Resolver la consulta, pero para el director de nombre 'John Steel'
+
+    SELECT a.cod_act, a.nombre
+    FROM ACTOR A
+    WHERE EXISTS (
+            SELECT *
+            FROM PELICULA
+            WHERE director = 'John Steel'
+              AND cod_peli IN(
+                SELECT cod_peli
+                FROM ACTUA X2
+                WHERE A.cod_act = X2.cod_act
+            )
+        )AND NOT EXISTS (
+            SELECT *
+            FROM PELICULA P
+            WHERE P.director = 'John Steel'
+              AND P.cod_peli NOT IN (
+                SELECT cod_peli
+                FROM ACTUA X3
+                WHERE A.cod_act = X3.cod_act
+            )
+    );
+
+5. Obtener el codigo y el titulo de las peliculas de menos de 100 minutos en las que todos los actores que han actuado son de un mismo pais.
+
+    SELECT cod_peli, titulo
+    FROM PELICULA
+    WHERE EXISTS(
+        SELECT *
+        FROM PELICULA
+        WHERE duracion < 100
+        AND cod_peli IN(
+            SELECT cod_peli
+            FROM ACTUA
+            WHERE cod_act IN(
+                SELECT cod_act
+                FROM ACTORES A
+                WHERE cod_pais IN(
+                    SELECT DISTINCT(cod_pais)
+                    FROM PAIS P
+                    WHERE P.cod_pais = A.cod_pais
+                )
+            )
+    )
+    )AND NOT EXISTS(
+        SELECT *
+        FROM PELICULA
+        WHERE duracion < 100
+        AND cod_peli IN(
+            SELECT cod_peli
+            FROM ACTUA
+            WHERE cod_act IN(
+                SELECT cod_act
+                FROM ACTORES A
+                WHERE cod_pais IN(
+                    SELECT DISTINCT(cod_pais)
+                    FROM PAIS P
+                    WHERE P.cod_pais <> A.cod_pais
+                )
+            )
+        )
+    );
+
+6. Obtener el código, el título y el año de las películas en las que haya actuado algún actor si  se  cumple  quetodos  los  actores  que  han  actuado en  ella  han  nacido  antes  del  año 1943 (hasta el 31/12/1942).
+
+    SELECT cod_peli, titulo, anyo
+    FROM PELICULA
+    WHERE EXISTS(
+        SELECT *
+        FROM PELICULA
+        WHERE cod_peli IN(
+            SELECT cod_peli
+            FROM ACTUA
+            WHERE cod_act IN(
+                SELECT cod_act
+                FROM ACTOR
+                WHERE fecha_nac < 01/01/1943
+            )
+        )
+    )AND NOT EXISTS(
+        SELECT *
+        FROM PELICULA
+        WHERE cod_peli IN(
+            SELECT cod_peli
+            FROM ACTUA
+            WHERE cod_act IN(
+                SELECT cod_act
+                FROM ACTOR
+                WHERE fecha_nac > 01/01/1943
+            )
+        )
+    );
+
+7. Obtener  el  código y  el  nombre  de  cada  país  si  se  cumple  que  todos  sus  actores  han actuado en al menosuna película de más de 120 minutos. (Ordenados por nombre).
+
+    SELECT cod_pais, nombre
+    FROM PAIS
+    WHERE EXISTS(
+        SELECT *
+        FROM ACTOR
+        WHERE cod_act IN(
+            SELECT cod_act
+            FROM ACTUA
+            WHERE cod_peli IN(
+                SELECT cod_peli
+                FROM PELICULA
+                WHERE duracion< 120
+            )
+        )
+    );
 
 Consultas agrupadas
 
@@ -519,7 +668,113 @@ Conjuntistas
 
 UNION
 
+Consultas Generales
+
+2. Obtener  el  nombre  del  género  (o  de  los  géneros)  a  los  que  pertenece  la  película  de duración máxima.
+
+    SELECT nombre
+    FROM GENERO
+    WHERE cod_gen IN(
+        SELECT cod_gen
+        FROM CLASIFICACION
+        WHERE cod_peli IN(
+            SELECT cod_peli
+            FROM PELICULA
+            WHERE cod_peli =(
+                SELECT MAX(duracion)
+                FROM PELICULA
+            )
+        )
+    );
+
+3. Obtener,  para  cada  actor  nacido  antes  de  1948  y  que  haya  actuado  en  al  menos  2 películas en cualquier papel, el código, el nombre y la fecha de nacimiento indicando en cuántas películas ha actuado con elpapel de 'Principal'.
+
+    SELECT cod_act, nombre, fecha_nac, COUNT (cod_peli)
+    FROM ACTOR A (LEFT JOIN ACTUA C  ON A.cod_act = C.act)
+    LEFT JOIN PELICULA P ON P.cod_act = A.cod_act
+    WHERE fecha_nac < 1948
+    AND papel = 'Principal'
+
+
 Base de Datos Musica
+
+Consultas sobre una relacion
+
+1. ¿Cuantos discos hay?
+
+    SELECT COUNT (cod)
+    FROM DISCOS
+
+2. Selecciona el nombre de los grupos que no sean de España.
+
+    SELECT nombre
+    FROM GRUPO
+    WHERE pais <> 'España'
+
+3. Obtener el título de las canciones con más de 5 minutos de duración.
+
+    SELECT titulo
+    FROM CANCION
+    WHERE duracion > 5
+
+4. Obtener la lista de las distintas funciones que se pueden realizar en un grupo.
+
+    SELECT DISTINCT funcion
+    FROM PERTENECE
+
+5. Obtener  la  lista  de clubs  de  fans  junto  con  su  tamaño  (número  de  personas).  La  lista debe estar ordenadade menor a mayor según el tamaño del club.
+
+    SELECT nombre, num
+    FROM CLUB
+    ORDER BY ASC
+
+6. Selecciona el nombre y la sede de los clubes de fans con más de 500 socios.
+
+    SELECT nombre, sede
+    FROM CLUB
+    WHERE num > 500
+
+Consultas sobre varias relaciones
+
+1. Obtener  el  nombre  y  la  sede  de  cada  club  de  fans  de  grupos  de  España  así  como  el nombre del grupo alque admiran.
+
+    SELECT C.nombre, sede, G.nombre
+    FROM CLUB C, GRUPO G
+    WHERE C.cod_gru = G.cod
+    AND G.pais = 'España'
+
+2. Obtener el nombre de los artistas que pertenezcan a un grupo de España.
+
+    SELECT nombre
+    FROM ARTISTA A, PERTENECE P, GRUPO G
+    WHERE A.dni = P.dni
+    AND P.cod = G.cod
+    AND G.pais = 'España'
+
+3. Obtener  el  nombre  de  los  discos  que  contienen  alguna  canción  que  dure  más  de  5 minutos.
+
+    SELECT D.nombre
+    FROM DISCO D, ESTA E, CANCION C
+    WHERE D.cod = E.cod
+    AND E.can = C.cod
+    AND C.duracion > 5
+
+4. Obtener los nombres de las canciones que dan nombre al disco en el que aparecen.
+
+    SELECT titulo
+    FROM CANCION C, ESTA E, DISCO D
+    WHERE C.cod = E.can
+    AND E.cod = D.cod
+    AND C.titulo = D.nombre
+
+5. Obtener los nombres de compañías y direcciones postales de aquellas compañías que han grabado algún.
+
+    SELECT nombre, dir
+    FROM COMPANYIA C, DISCO D
+    WHERE C.cod = D.cod_comp
+
+6. DNI de los artistas que pertenecen a más de un grupo.
+
 
 Consultas agrupadas
 
@@ -527,7 +782,7 @@ Consultas agrupadas
 
     SELECT G.nombre, SUM(C.num)
     FROM GRUPO G, CLUB C
-    WHERE G.cod_gru = c.cod_gru
+    WHERE G.cod_gru = C.cod_gru
     AND G.pais = 'España'
     GROUP BY G.cod_nombre
 
@@ -535,13 +790,13 @@ Consultas generales
 
 6.
 
-SELECT nombre, num
-FROM CLUB C1
-WHERE 9 = (
-    SELECT COUNT(DISTINCT (cod))
-    FROM CLUB C2
-    WHERE C2.num > C1.num
-);
+    SELECT nombre, num
+    FROM CLUB C1
+    WHERE 9 = (
+        SELECT COUNT(DISTINCT (cod))
+        FROM CLUB C2
+        WHERE C2.num > C1.num
+    );
 
 Base de Datos Ciclismo
 
