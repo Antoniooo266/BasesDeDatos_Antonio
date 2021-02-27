@@ -775,10 +775,57 @@ Consultas sobre varias relaciones
 
 6. DNI de los artistas que pertenecen a más de un grupo.
 
+    SELECT dni
+    FROM ARTISTA A, PERTENECE C
+    WHERE A.dni = C.dni
+    AND C.cod > 1
+
+Consultas con subconsultas
+
+1. Obtener el nombre de los discos del grupo más viejo.
+
+    SELECT nombre
+    FROM DISCO
+    WHERE cod_gru IN(
+        SELECT MIN(cod)
+        FROM GRUPO
+    );
+
+2. Obtener el nombre de los discos grabados por grupos con club de fans con más de 5000 personas.
+
+    SELECT nombre
+    FROM DISCO
+    WHERE cod_gru IN(
+        SELECT cod
+        FROM GRUPO
+        WHERE cod IN(
+            SELECT cod_gru
+            FROM CLUB
+            WHERE num > 5000
+        )
+    );
+
+3. Obtener el nombre de los clubes con mayor número de fans indicando ese número.
+
+    SELECT nombre, num
+    FROM CLUB
+    WHERE cod IN(
+        SELECT MAX (num)
+        FROM CLUB
+    );
+
+4. Obtener el título de las canciones de mayor duración indicando la duración.
+
+    SELECT titulo, duracion
+    FROM CANCION
+    WHERE cod IN(
+        SELECT MAX(duracion)
+        FROM CANCION
+    );
 
 Consultas agrupadas
 
-1.
+1. Obtener los nombres de los artistas de grupos con clubes de fans de más de 500 personas y que el grupo sea de Inglaterra.
 
     SELECT G.nombre, SUM(C.num)
     FROM GRUPO G, CLUB C
@@ -786,9 +833,113 @@ Consultas agrupadas
     AND G.pais = 'España'
     GROUP BY G.cod_nombre
 
+2. Obtener  para  cada grupo  con  más  de  dos  componentes  el  nombre  y  el  número  de componentes del grupo.
+
+    SELECT G.nombre, COUNT(P.funcion)
+    FROM GRUPO G, PERTENECE P
+    WHERE G.cod = P.cod
+    AND P.funcion > 2
+    GROUP BY G.nombre
+
+3. Obtener el número de discos de cada grupo.
+
+    SELECT COUNT(D.cod)
+    FROM DISCO D, GRUPO G
+    WHERE D.cod_gru = G.cod
+    GROUP BY D.cod
+
+4. Obtener  el  número  de  canciones  que  ha  grabado  cada  compañía  discográfica  y  su dirección.
+
+    SELECT C.nombre, COUNT(A.cod), C.dir
+    FROM COMPANYIA C, DISCO D, ESTA E, CANCION A
+    WHERE C.cod = D.cod_comp
+    AND D.cod = E.cod
+    AND E.can = A.cod
+    GROUP BY C.nombre
+
 Consultas generales
 
-6.
+1. Obtener los nombres de los artistas de grupos con clubes de fans de más de 500 personas y que el grupo sea de Inglaterra.
+
+    SELECT nombre
+    FROM ARTISTA
+    WHERE dni IN(
+        SELECT dni
+        FROM PERTENECE
+        WHERE cod IN(
+            SELECT cod
+            FROM GRUPO
+            WHERE pais = 'Inglaterra'
+            AND cod IN(
+                SELECT cod_gru
+                FROM CLUB
+                WHERE num > 500
+            )
+        )
+    );
+
+2. Obtener el título de las canciones de todos los discos del grupo U2.
+
+    SELECT titulo
+    FROM CANCION
+    WHERE EXISTS (
+        SELECT *
+        FROM CANCION
+        WHERE cod IN(
+            SELECT can
+            FROM ESTA
+            WHERE cod IN(
+                SELECT cod
+                FROM DISCO
+                WHERE cod_gru IN(
+                    SELECT cod
+                    FROM GRUPO
+                    WHERE nombre = 'U2'
+                )
+            )
+        )
+    )WHERE NOT EXISTS (
+        SELECT *
+        FROM CANCION
+        WHERE cod IN(
+            SELECT can
+            FROM ESTA
+            WHERE cod IN(
+                SELECT cod
+                FROM DISCO
+                WHERE cod_gru IN(
+                    SELECT cod
+                    FROM GRUPO
+                    WHERE nombre != 'U2'
+                )
+            )
+        )
+    )
+
+3. El dúo dinámico por fin se jubila; para sustituirles se pretende hacer una selección sobre todos los paresde artistas de grupos españoles distintos tales que el primero sea voz y el segundo guitarra. Obtenerdicha selección.
+
+    SELECT nombre
+    FROM GRUPO
+    WHERE EXISTS(
+        SELECT *
+        FROM GRUPO
+        WHERE cod IN(
+            SELECT cod
+            FROM PERTENECE
+            WHERE dni IN(
+                SELECT COUNT(dni)
+                FROM PERTENECE
+                WHERE dni = 2
+                AND funcion = 'Voz'
+            )
+        )
+    );
+
+4. Obtener el nombre de los artistas que pertenecen a más de un grupo.
+
+
+
+6. Obtener el décimo (debe haber sólo 9 por encima de él) club con mayor número de fans indicando esenúmero.
 
     SELECT nombre, num
     FROM CLUB C1
@@ -797,6 +948,326 @@ Consultas generales
         FROM CLUB C2
         WHERE C2.num > C1.num
     );
+
+Base de Datos Biblioteca
+
+Consultas de una sola relacion
+
+1. Obtener el nombre de los autores de nacionalidad ‘Argentina’.
+
+    SELECT nombre
+    FROM AUTOR
+    WHERE nacionalidad = 'Argentina'
+
+2. Obtener los títulos de las obras que contengan la palabra ‘mundo’.
+
+    SELECT titulo
+    FROM OBRA
+    WHERE LIKE '%mundo%'
+
+3. Obtener  el  identificador  de  los  libros  anteriores  a  1990  y  que  contengan más  de  una obra indicando elnúmero de obras que contiene.
+
+    SELECT id_lib, num_obras
+    FROM LIBRO
+    WHERE año < 1990
+    AND num_obras > 2
+
+4. ¿Cuántos libros hay de los que se conozca el año de adquisición?
+
+    SELECT COUNT(id_lib)
+    FROM LIBRO
+    WHERE año IS NOT NULL
+
+5. ¿Cuántos libros tienen más de  una obra? Resolver este ejercicio utilizando el atributo num_obras.
+
+    SELECT COUNT(id_lib)
+    FROM LIBRO
+    WHERE num_obra > 1
+
+6. Obtener el identificador de los libros del año 1997 que no tienen título.
+
+    SELECT id_lib
+    FROM LIBRO
+    WHERE año = '1997'
+    AND titulo IS NULL
+
+7. Mostrar todos los títulos de los libros que tienen título en orden alfabético descendente.
+
+    SELECT titulo
+    FROM LIBRO
+    WHERE titulo IS NOT NULL
+    ORDER BY DESC
+
+8. Obtener cuántas obras hay en los libros publicados entre 1990 y 1999.
+
+    SELECT num_obras
+    FROM LIBRO
+    WHERE año BETWEEN 1990 AND 1999
+
+Consultas sobre varias relaciones
+
+1. Obtener cuántos autores han escrito alguna obra con la palabra “ciudad” en su título.
+
+    SELECT TCOUNT autot_id
+    FROM AUTOR a, ESCRIBIR e, OBRA o
+    WHERE a.autor_id = e.autor_id
+    AND e.cod_ob = o.cod_ob
+    AND o.titulo LIKE '%ciudad%'
+
+2. Obtener el titulo de todas las obras escritas por el autor de nombre 'Camus, Albert'
+
+    SELECT titulo
+    FROM OBRA o, ESCRIBIR e, AUTOR a
+    WHERE o.cod_ob = e.cod_ob
+    AND e.autor_id = a.autor_id
+    AND a.nombre = 'Camús' && 'Albert'
+
+
+3. ¿Quien es el autor de la obra de titulo 'La tata'?
+
+    SELECt nombre
+    FROM AUTOR a, ESCRIBIR e, OBRA o
+    WHERE a.autor_id = e.autor_id
+    AND e.cod_ob = o.cod_ob
+    AND o.titulo = 'La tata'
+
+4. Obtener el nombre de los amigos que han leido alguna obra del autor de identificador 'RUKI'.
+
+    SELECT DISTINCT nombre
+    FROM AMIGO A, LEER L, OBRA O, ESCRIBIR E
+    WHERE A.num = L.num
+    AND L.cod_ob = O.cod_ob
+    AND O.cod_ob = E.cod_ob
+    AND E.autor_id = 'RUKI'
+
+5. Obtener  el  título  y  el  identificador  de  los  libros  que  tengan  título  y  más  de  una  obra. Resolver esteejercicio sin utilizar el atributo num_obras.
+
+    SELECT titulo, id_lib
+    FROM LIBRO L, ESTA_EN S
+    WHERE L.id_lib = S.id_lib
+    AND S.cod_ob > 1
+    AND titulo IS NOT NULL
+
+Consultas con subconsultas
+
+1. Obtener el título de las obras escritas sólo por un autor si éste es de nacionalidad “Francesa” indicandotambién el nombre del autor.
+
+    SELECT o.titulo, a.nombre
+    FROM OBRA o, AUTOR a
+    WHERE cod_ob IN (
+        SELECT cod_ob
+        FROM ESCRIBIR
+        WHERE autor_id IN (
+        SELECT nombre
+        FROM AUTOR
+        WHERE nacionalidad = "francesa"
+        )
+    );
+
+2. ¿Cuántos autores hay en la base de datos de los que no se tiene ninguna obra?
+
+    SELECT COUNT (autor_id)
+    FROM AUTOR
+    WHERE autor_id NOT IN (
+        SELECT autor_id
+        FROM ESCRIBIR
+    );
+
+3. Obtener el nombre de esos autores.
+
+    SELECT nombre
+    FROM AUTOR
+    WHERE autor_id NOT IN (
+        SELECT autor_id
+        FROM ESCRIBIR
+    );
+
+4. Obtener el nombre de los autores de nacionalidad “Española” que han escrito dos o más obras.
+
+    SELECT nombre
+    FROM AUTOR a
+    WHERE nacionalidad = 'Española'
+    AND 2 => IN (
+        SELECT COUNT (cod_ob)
+        FROM ESCRIBIR
+        WHERE autor_id = a.autor_id
+    );
+
+5. Obtener el nombre de los autores de nacionalidad “Española” que han escrito alguna obra que está endos o más libros.
+
+    SELECT nombre
+    FROM AUTOR
+    WHERE nacionalidad = 'Española'
+    AND autor_id IN (
+        SELECT autor_id
+        FROM ESCRIBIR
+        WHERE cod_ob IN (
+            SELECT cod_ob
+            FROM ESTA_EN
+            WHERE id_lib
+            AND => 2 IN (
+                SELECT COUNT (id_lib)
+                FROM LIBRO
+            )
+        )
+    );
+
+6. Obtener el título y el código de las obras que tengan más de un autor.
+
+    SELECT titulo, a.cod_ob
+    FROM OBRA a
+    WHERE 1 < (
+        SELECT cod_ob
+        FROM ESCRIBIR
+        WHERE cod_ob = a.cod_ob
+    );
+
+Consultas con cuantificacion universal
+
+1. Obtener el nombre de los amigos que han leído todas las obras del autor de identificador ‘RUKI’.
+
+    SELECT nombre
+    FROM AMIGO a
+    WHERE NOT EXISTS (
+        SELECT *
+        FROM ESCRIBIR
+        WHERE autor_id = "RUKI"
+        AND cod_ob NOT IN (
+            SELECT cod_ob
+            FROM LEER
+            WHERE num = a.num
+        )
+    )AND EXISTS (
+        SELECT *
+        FROM ESCRIBIR NATURAL JOIN LEER
+        WHERE autor_id = "RUKI"
+        AND num = a.num
+    )
+
+2. Resolver de nuevo la consulta anterior,pero para el autor de identificador ‘GUAP’.
+
+SELECT nombre
+    FROM AMIGO a
+    WHERE NOT EXISTS (
+        SELECT *
+        FROM ESCRIBIR
+        WHERE autor_id = "GUAP"
+        AND cod_ob NOT IN (
+            SELECT cod_ob
+            FROM LEER
+            WHERE num = a.num
+        )
+    )AND EXISTS (
+        SELECT *
+        FROM ESCRIBIR NATURAL JOIN LEER
+        WHERE autor_id = "GUAP"
+        AND num = a.num
+    )
+
+3. Obtener el nombre de los amigos que han leído todas las obras de algún autor de los que hay en la tabla
+
+    SELECT nombre
+    FROM AMIGO a, LEER l, ESCRIBIR e
+    WHERE a.num = l.num
+    AND l.cod_ob = e.cod_ob
+    AND NOT EXISTS (
+        SELECT *
+        FROM ESCRIBIR
+        WHERE autor_id = e.autor_id
+        AND cod_ob NOT IN (
+            SELECT cod_ob
+            FROM LEER
+            num = a.num
+        )
+    );
+
+5. Resolver la consulta anterior indicando también el nombre de ese autor.
+
+    SELECT a.nombre, h.nombre
+    FROM AMIGO a, LEER l, ESCRIBIR e, AUTOR h
+    WHERE a.num = l.num
+    AND l.cod_ob = e.cod_ob
+    AND NOT EXISTS (
+        SELECT *
+        FROM ESCRIBIR
+        WHERE autor_id = e.autor_id
+        AND cod_ob NOT IN (
+            SELECT cod_ob
+            FROM LEER
+            num = a.num
+        )
+    );
+
+6. Obtener el nombre de los amigos que sólo han leído obras del autor de identificador ‘CAMA’.
+
+SELECT nombre
+FROM AMIGO
+WHERE num NOT IN (
+    SELECT num
+    FROM LEER
+    WHERE cod_ob NOT IN (
+        SELECT cod_ob
+        FROM ESCRIBIR
+        WHERE autor_id = "CAMA"
+    )
+)AND num IN (
+    SELECT num
+    FROM LEER
+);
+
+7. Resolver de nuevo la consulta anterior,pero para el autor de identificador ‘GUAP’.
+
+
+
+8. Obtener el nombre de los amigos tales que todas las obras que han leído son del mismo autor.
+
+    SELECT nombre
+    FROM AMIGO
+    WHERE num IN (
+        SELECT num
+        FROM LEER
+        WHERE cod_ob IN (
+            SELECT cod_ob
+            FROM ESCRIBIR e
+            WHERE NOT EXISTS (
+                SELECT *
+                FROM ESCRIBIR
+                WHERE e.autor_id <> autor_id
+                AND cod_ob IN (
+                    SELECT cod_ob
+                    FROM LEER
+                    WHERE num = AMIGO.num
+                )
+            )
+        )
+    );
+
+9. Resolver la consulta anterior indicando también el nombre del autor.
+
+    SELECT A.nombre, U.nombre
+    FROM AMIGO A AUTOR U
+    WHERE num IN (
+        SELECT num
+        FROM LEER
+        WHERE cod_ob IN (
+            SELECT cod_ob
+            FROM ESCRIBIR e
+            WHERE NOT EXISTS (
+                SELECT *
+                FROM ESCRIBIR
+                WHERE e.autor_id <> autor_id
+                AND cod_ob IN (
+                    SELECT cod_ob
+                    FROM LEER
+                    WHERE num = A.num
+                )
+            )
+        )
+    );
+
+10. Obtener el nombre de los amigos que han leído todas las obras de algún autor y no han leído nada deningún otro indicando también el nombre del autor.
+
+
 
 Base de Datos Ciclismo
 
