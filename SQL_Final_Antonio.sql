@@ -1577,17 +1577,96 @@ Consultas con cuantificacion universal
         )
     );
 
-3. Obtener el dorsal y el nombre de los ciclistas tales que todas las etapas que han ganado tienen más de170 km (es decir que sólo han ganado etapas de más de 170 km).
+3. Obtener el dorsal y el nombre de los ciclistas tales que todas las etapas que han ganado tienen más de 170 km (es decir que sólo han ganado etapas de más de 170 km).
 
-    SELECT
+    SELECT dorsal, nombre
+    FROM CICLISTA C
+    WHERE NOT EXISTS (
+        SELECT *
+        FROM ETAPA E
+        WHERE km < 170
+        AND C.dorsal = E.dorsal
+    );
+
+4. Obtener  el  nombre  de  los  ciclistas  que  han  ganado  todos  los  puertos  de  una  etapa  y además han ganado esa misma etapa.
+
+    SELECT nombre
+    FROM CICLISTA
+    WHERE EXISTS (
+        SELECT *
+        FROM CICLISTA
+        WHERE dorsal IN(
+            SELECT dorsal
+            FROM ETAPA
+            WHERE netapa IN(
+                SELECT netapa
+                FROM PUERTO P
+                WHERE numpuerto IS NOT NULL
+                AND P.netapa IS NOT NULL
+            )
+        )
+    );
+
+Consultas Agrupadas
+
+1. Obtener el valor del atributo netapa de aquellas etapas que tienen puertos de montaña indicandocuántos tiene.
+
+    SELECT netapa, COUNT(nompuerto)
+    FROM PUERTO P, ETAPA E
+    WHERE P.netapa = E.netapa
+    GROUP BY netapa
+
+2. Obtener  el  nombre  de  los  equipos  que  tengan  ciclistas  indicando  cuántos  tiene  cada uno.
+
+    SELECT distinct nomep, COUNT(dorsal)
+    FROM EQUIPO E, CICLISTA C
+    WHERE E.nomep = C.nomep
+    GROUP BY nomeq
+
+3. Obtener el nombre de todos los equipos indicando cuántos ciclistas tiene cada uno.
+
+    SELECT nomep, COUNT(dorsal)
+    FROM EQUIPO E, CICLISTA C
+    WHERE E.nomep = C.nomep
+    GROUP BY nomeq
+
+4. Obtener el director y el nombre de los equipos que tengan más de 3 ciclistas y cuya edad media seainferior o igual a 30 años.
+
+    SELECT director, nomeq
+    FROM EQUIPO E, CICLISTAS C
+    WHERE E.nomeq = C.nomeq
+    AND dorsal > 3
+    GROUP BY nomeq
+    HAVING AVG(edad) < 30
+
+5. Obtener el nombre de los ciclistas que pertenezcan a un equipo que tenga más de cinco corredores y quehayan ganado alguna etapa indicando cuántas etapas ha ganado.
+
+    SELECT nombre, COUNT (netapa)
+    FROM CICLISTA C, EQUIPO E, ETAPA T
+    WHERE C.nomeq = E.nomeq
+    AND C.dorsal = T.dorsal
+    GROUP BY nombre
+    HAVING C.dorsal > 5
+
+6. Obtener el nombre de los equipos y la edad media de sus ciclistas de aquellos equipos que tengan lamedia de edad máximade todos los equipos.
+
+    SELECT nomeq, AVG(dorsal)
+    FROM EQUIPO E, CICLISTA C
+    WHERE E.nomeq = C.nomeq
+    GROUP BY nomeq
+    HAVING AVG(MAX(edad))
+
+7. Obtener  el  director  de  los  equipos  cuyos  ciclistas  han  llevado,  entre  todos,  más  días maillots de cualquiertipo. Nota: cada tupla de la relación Llevar indica que un ciclista ha llevado un maillot un día.
+
+    SELECT director
+    FROM EQUIPO E, CICLISTA C, LLEVAR L
+    WHERE E.nomeq = C.nomeq
+    AND C.dorsal = L.dorsal
+    GROUP BY director
 
 Consultas Generales
 
-3.
-
-EXISTS Y NOT IN
-
-5.
+5
 
     SELECT dorsal, nombre
     FROM CICLISTA
@@ -1598,7 +1677,5 @@ EXISTS Y NOT IN
             SELECT codigo
             FROM LLEVAR
             WHERE dorsal = 20
-            )
-        );
-
-
+        )
+    );
