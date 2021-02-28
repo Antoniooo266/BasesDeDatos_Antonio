@@ -1200,24 +1200,37 @@ SELECT nombre
 
 6. Obtener el nombre de los amigos que sólo han leído obras del autor de identificador ‘CAMA’.
 
-SELECT nombre
-FROM AMIGO
-WHERE num NOT IN (
-    SELECT num
-    FROM LEER
-    WHERE cod_ob NOT IN (
-        SELECT cod_ob
-        FROM ESCRIBIR
-        WHERE autor_id = "CAMA"
-    )
-)AND num IN (
-    SELECT num
-    FROM LEER
-);
+    SELECT nombre
+    FROM AMIGO
+    WHERE num NOT IN (
+        SELECT num
+        FROM LEER
+        WHERE cod_ob NOT IN (
+            SELECT cod_ob
+            FROM ESCRIBIR
+            WHERE autor_id = "CAMA"
+        )
+    )AND num IN (
+        SELECT num
+        FROM LEER
+    );
 
 7. Resolver de nuevo la consulta anterior,pero para el autor de identificador ‘GUAP’.
 
-
+    SELECT nombre
+    FROM AMIGO
+    WHERE num NOT IN (
+        SELECT num
+        FROM LEER
+        WHERE cod_ob NOT IN (
+            SELECT cod_ob
+            FROM ESCRIBIR
+            WHERE autor_id = "GUAP"
+        )
+    )AND num IN (
+        SELECT num
+        FROM LEER
+    );
 
 8. Obtener el nombre de los amigos tales que todas las obras que han leído son del mismo autor.
 
@@ -1265,11 +1278,308 @@ WHERE num NOT IN (
         )
     );
 
-10. Obtener el nombre de los amigos que han leído todas las obras de algún autor y no han leído nada deningún otro indicando también el nombre del autor.
+10. Obtener el nombre de los amigos que han leído todas las obras de algún autor y no han leído nada de ningún otro indicando también el nombre del autor.
 
+    SELECT nombre
+    FROM AMIGO
+    WHERE EXISTS (
+        SELECT *
+        FROM
+    )
 
+Consultas agrupadas
+
+1. Obtener el nombre de los amigos que han leído más de 3 obras indicando también la cantidad de obras leídas.
+
+    SELECT nombre, COUNT (cod_ob)
+    FROM AMIGO A, LEER L
+    WHERE A.num = L.num
+    AND L.cod_ob > 3
+    GROUP BY nombre
+
+2. Obtener, de los temas con alguna obra, la temática y la cantidad de obras con ese tema.
+
+    SELECT tematica, COUNT(cod_ob)
+    FROM TEMA T, OBRA O
+    WHERE T.tematica = O.tematica
+    GROUP BY tematica
+    HAVING cod_ob IS NOT NULL
+
+3. Obtener, de todos los temas de la base de datos, la temática y la cantidad de obras con ese tema.
+
+    SELECT tematica, COUNT(cod_ob)
+    FROM TEMA T, OBRA O
+    WHERE T.tematica = O.tematica
+    GROUP BY T.tematica
+
+4. Obtener el nombre del autor (o autores) que más obras han escrito.
+
+    SELECT A.nombre
+    FROM AUTOR A, ESCRIBIR E
+    WHERE A.autor_id = E.autor_id
+    GROUP BY nombre
+    HAVING MAX(cod_ob)
+
+5. Obtener la nacionalidad (o nacionalidades) menos frecuentes.
+
+    SELECT nacionalidad
+    FROM AUTOR
+    GROUP BY nacionalidad
+    HAVING COUNT(MIN(nacionalidad))
+
+6. Obtener el nombre del amigo (o amigos) que han leído más obras.
+
+    SELECT nombre
+    FROM AMIGO A, LEER L
+    WHERE A.num = L.num
+    GROUP BY nombre
+    HAVING MAX(cod_ob)
+
+Consultas generales
 
 Base de Datos Ciclismo
+
+Consultas sobre una sola relacion
+
+1. Obtener el código, el tipo, el color y el premio de todos los maillots que hay.
+
+    SELECT *
+    FROM MAILLOT
+
+2. Obtener el dorsal y el nombre de los ciclistas cuya edad sea menor o igual que 25 años.
+
+    SELECT dorsal, nombre
+    FROM CICLISTA
+    WHERE edad >= 25
+
+3. Obtener el nombre y la altura de todos los puertos de categoría ‘E’ (Especial).
+
+    SELECT nompuerto, altura
+    FROM PUERTO
+    WHERE categoria 'E'
+
+4. Obtener el valor del atributo netapa de aquellas etapas con salida y llegada en la misma ciudad.
+
+    SELECT netapa
+    FROM ETAPA
+    WHERE salida = netapa
+    AND llegada = netapa
+
+5. ¿Cuántos ciclistas hay?
+
+    SELECT COUNT(dorsal)
+    FROM CICLISTA
+
+6. ¿Cuántos ciclistas hay con edad superior a 25 años?
+
+    SELECT COUNT(dorsal)
+    FROM CICLISTA
+    WHERE edad > 25
+
+7. ¿Cuantos equipos hay?
+
+    SELECT COUNT(nomep)
+    FROM EQUIPO
+
+8. Obtenerla media de edad de los ciclistas.
+
+    SELECT AVG(edad)
+    FROM CICLISTA
+
+9. Obtener la altura mínima y máxima de los puertos de montaña.
+
+    SELECT MIN(altura), MAX(nompuertos)
+    FROM PUERTO
+
+Consultas sobre varias relaciones
+
+1. Obtener  el  nombre  y  la  categoría  de  los  puertos  ganados  por  ciclistas  del  equipo ‘Banesto’.
+
+    SELECT nompuerto, categoria
+    FROM PUERTO P, CICLISTA C
+    WHERE C.dorsal = P.dorsal
+    AND nomep = 'Banesto'
+
+2. Obtener el nombre del cada puerto indicando el número (netapa) y los kilómetros de la etapa en la quese encuentra el puerto.
+
+    SELECT nompuerto, netapa, km
+    FROM PUERTO P, ETAPA E
+    WHERE P.netapa = E.netapa
+
+3. Obtener el nombre y el director de los equipos a los que pertenezca algún ciclista mayor de 33 años.
+
+    SELECT nomep. director
+    FROM EQUIPO E, CICLISTA C
+    WHERE E.nomep, C.nomep
+    AND C.edad > 33
+
+4. Obtener el nombre de los ciclistas con el color de cada maillot que hayan llevado.
+
+    SELECT DISTINCT nombre, color
+    FROM CICLISTA C, LLEVAR L, MAILLOT M
+    WHERE C.dorsal = L.dorsal
+    AND L.codigo = M.codigo
+
+5. Obtener pares de nombre de ciclista y número de etapa tal que ese ciclista haya ganado esa etapa y hayallevado el maillot de color ‘Amarillo’ en alguna etapa.
+
+    SELECT nombre, netapa
+    FROM CICLISTA C, ETAPA E, LLEVAR L, MAILLOT M
+    WHERE C.dorsal = E.dorsal
+    AND C.dorsal = L.dorsal
+    AND L.codigo = M.codigo
+    AND color = 'Amarillo'
+    AND premio IS NOT NULL
+
+6. Obtener el valor del atributo netapa de las etapas que no comienzan en la misma ciudad enque acabó la anterior etapa.
+
+    SELECT netapa
+    FROM ETAPA E, PUERTO P
+    WHERE E.netapa = P.netapa
+    AND E.llegada <> E.salida
+
+Consultas con subconsultas
+
+1. Obtener  el  valor  del  atributo  netapa  y  la  ciudad  de  salida  de  aquellas  etapas  que  no tengan puertos de montaña.
+
+    SELECT netapa, salida
+    FROM ETAPA
+    WHERE netapa IN(
+            SELECT netapa
+            FROM PUERTO
+            WHERE catergoria <> 'Montaña'
+    );
+
+2. Obtener la edad media de los ciclistas que han ganado alguna etapa.
+
+    SELECT AVG(edad)
+    FROM CICLISTA
+    WHERE dorsal IN(
+        SELECT dorsal
+        FROM LLEVAR
+        WHERE codigo IN(
+            SELECT codigo
+            FROM MAILLOT
+            WHERE premio IS NOT NULL
+        )
+    );
+
+3. Selecciona el nombrede los puertos con una altura superior a la altura media de todos los puertos.
+
+    SELECT nompuerto
+    FROM PUERTO
+    WHERE altura > (
+        SELECT AVG(altura)
+        FROM PUERTO
+    );
+
+4. Obtener  el  nombre  de  la  ciudad  de  salida  y  de  llegada  de  las  etapas  donde  estén  los puertos con mayor pendiente.
+
+    SELECT salida, llegada
+    FROM ETAPA
+    WHERE netapa IN(
+        SELECT netapa
+        FROM PUERTO
+        WHERE pendiente = (
+            SELECT MAX(pendiente)
+            FROM PUERTO
+        )
+    );
+
+5. Obtener  el  dorsal  y  el  nombre  de  los  ciclistas  que  han  ganado  los  puertos  de  mayor altura.
+
+    SELECT dorsal, nombre
+    FROM CICLISTA
+    WHERE dorsal IN(
+        SELECT dorsal
+        FROM PUERTO
+        WHERE altura = (
+            SELECT MAX(altura)
+            FROM PUERTO
+        )
+    );
+
+6. Obtener el nombre del ciclista más joven.
+
+    SELECT nombre
+    FROM CICLISTA
+    WHERE edad = (
+        SELECT MIN(edad)
+        FROM CICLISTA
+    );
+
+7. Obtener el nombre del ciclista más joven que ha ganado al menos una etapa.
+
+   SELECT nombre
+    FROM CICLISTA
+    WHERE edad = (
+        SELECT MIN(edad)
+        FROM CICLISTA
+        WHERE dorsal IN(
+            SELECT dorsal
+            FROM ETAPA
+            WHERE netapa > 1
+        )
+    );
+
+8. Obtener el nombre de los ciclistas que han ganado más de un puerto.
+
+    SELECT nombre
+    FROM CICLISTA
+    WHERE dorsal IN(
+        SELECT dorsal
+        FROM PUERTO
+        WHERE nompuerto > 1
+    );
+
+Consultas con cuantificacion universal
+
+1. Obtener el valor del atributo netapa de aquellas etapas tales que todos los puertos que están en ellastienen más de 700 metros de altura.
+
+    SELECT netapa
+    FROM ETAPA
+    WHERE EXISTS (
+        SELECT *
+        FROM ETAPA
+        WHERE netapa IN(
+            SELECT netapa
+            FROM PUERTO
+            WHERE altura > 700
+        )
+    )AND NOT EXISTS (
+        SELECT *
+        FROM ETAPA
+        WHERE netapa IN(
+            SELECT netapa
+            FROM PUERTO
+            WHERE altura <> 700
+        )
+    );
+
+2. Obtener el nombre y el director de los equipos tales que todos sus ciclistas son mayores de 25 años.
+
+    SELECT nomeq, director
+    FROM EQUIPO
+    WHERE EXISTS (
+        SELECT *
+        FROM EQUIPO
+        WHERE nomep IN(
+            SELECT  nomep
+            FROM CICLISTA
+            WHERE edad > 25
+        )
+    )AND NOT EXISTS (
+        SELECT *
+        FROM EQUIPO
+        WHERE nomep IN(
+            SELECT  nomep
+            FROM CICLISTA
+            WHERE edad < 25
+        )
+    );
+
+3. Obtener el dorsal y el nombre de los ciclistas tales que todas las etapas que han ganado tienen más de170 km (es decir que sólo han ganado etapas de más de 170 km).
+
+    SELECT
 
 Consultas Generales
 
